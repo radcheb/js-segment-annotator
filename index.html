@@ -79,7 +79,8 @@
   </div>
   <script type="text/javascript">
     window.onload = function() {
-      new SLICSegmentAnnotator('example.jpg', {
+       var start= (new Date()).getTime();
+      new SLICSegmentAnnotator('example2.jpg', {
         regionSize: 40,
         container: document.getElementById('annotator-container'),
         // annotation: 'annotation.png' // optional existing annotation data.
@@ -250,6 +251,7 @@
           downloadAsFile(dataURL, 'export.json');
         });
       }
+	console.log("time:: "+((new Date()).getTime() - start) + 'ms');      
     }
   </script>
 </body>
