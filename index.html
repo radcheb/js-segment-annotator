@@ -1,256 +1,79 @@
+<!DOCTYPE html>
 <html>
-<head>
-  <script type="text/javascript" src="pf-segmentation.js"></script>
-  <script type="text/javascript" src="slic-segmentation.js"></script>
-  <script type="text/javascript" src="segment-annotator.js"></script>
-  <style type="text/css">
-    body {
-      font-family: Verdana, Arial, sans-serif;
-    }
-    .legend {
-      display: inline-block;
-    }
-    .legend-item {
-      display: inline-block;
-      padding: .2em .5em;
-      min-width: 8em;
-      cursor: pointer;
-      background-color: #eee;
-    }
-    .legend-item:hover {
-      background-color: #999;
-    }
-    .legend-selected {
-      background-color: #ccc;
-    }
-    .legend-delete-button {
-      display: inline-block;
-      padding: .2em .3em;
-      cursor: pointer;
-      background-color: #eee;
-    }
-    .legend-delete-button:hover {
-      background-color: #999;
-    }
-    .legend-color-box {
-      display: inline-block;
-      border: #000 solid 1px;
-      width: .8em;
-      height: .8em;
-      vertical-align: middle;
-    }
-    .toggle-button {
-      display: inline-block;
-      padding: .3em .5em;
-      min-width: 6em;
-      background-color: #eee;
-      cursor: pointer;
-    }
-    .toggle-button:hover {
-      background-color: #999;
-    }
-    .toggle-button-disabled {
-      background-color: #ccc;
-    }
-  </style>
-</head>
-<body>
-  <div style="white-space:nowrap;">
-    <div id="annotator-container"></div>
-    <div style="display:inline-block;vertical-align:top;padding:0 1em;">
-      <p>Labels</p>
-      <div id="legend" class="legend"></div>
-      <p>
-        <label for="add-label-input">Add:</label>
-        <input id="add-label-input" type="text" style="width:6em;" />
-      </p>
-      <p>Views</p>
-      <div>
-        <div id="image-view-button" class="toggle-button">Image</div><br />
-        <div id="boundary-view-button" class="toggle-button">Boundary</div><br />
-        <div id="fill-view-button" class="toggle-button">Fill</div>
-      </div>
-      <p>Data</p>
-      <div>
-        <div id="import-button" class="toggle-button">Import</div><br />
-        <div id="export-button" class="toggle-button">Export</div>
-      </div>
+
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="description" content="Js-segment-annotator : Javascript image annotation tool based on image segmentation.">
+
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>Js-segment-annotator</title>
+  </head>
+
+  <body>
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/radcheb/js-segment-annotator">View on GitHub</a>
+
+          <h1 id="project_title">Js-segment-annotator</h1>
+          <h2 id="project_tagline">Javascript image annotation tool based on image segmentation.</h2>
+
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/radcheb/js-segment-annotator/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/radcheb/js-segment-annotator/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
     </div>
-  </div>
-  <script type="text/javascript">
-    window.onload = function() {
-      new SLICSegmentAnnotator('example.jpg', {
-        regionSize: 40,
-        container: document.getElementById('annotator-container'),
-        // annotation: 'annotation.png' // optional existing annotation data.
-        labels: [
-          {name: 'background', color: [255, 255, 255]},
-          'skin',
-          'skirt',
-          'belt'
-          ],
-        onload: function() {
-          initializeLegend(this);
-          initializeLegendAdd(this);
-          initializeButtons(this);
-        }
-      });
-      // Create a legend.
-      function initializeLegend(annotator) {
-        // Attach a click event to a legend item.
-        function attachClickEvent(item, i) {
-          item.addEventListener('click', function() {
-            var selected = document.getElementsByClassName('legend-selected')[0];
-            if (selected)
-              selected.classList.remove('legend-selected');
-            annotator.setCurrentLabel(i);
-            this.classList.add('legend-selected');
-          });
-        }
-        var labels = annotator.getLabels();
-        var legend = document.getElementById('legend');
-        legend.innerHTML = '';
-        for (var i = 0; i < labels.length; ++i) {
-          // Create an item.
-          var color = labels[i].color;
-          var colorbox = document.createElement('span');
-          colorbox.classList.add('legend-color-box');
-          colorbox.style.backgroundColor =
-              'rgb(' + color[0] + ',' + color[1] + ',' + color[2] + ')';
-          var item = document.createElement('div');
-          item.classList.add('legend-item');
-          item.appendChild(colorbox);
-          item.innerHTML += (' ' + labels[i].name);
-          legend.appendChild(item);
-          attachClickEvent(item, i);
-          // Create a delete button.
-          if (i !== 0) {
-            var deleteButton = document.createElement('div');
-            deleteButton.innerHTML = '&times;';
-            deleteButton.classList.add('legend-delete-button');
-            legend.appendChild(deleteButton);
-            attachDeleteEvent(annotator, deleteButton, i);
-          }
-          legend.appendChild(document.createElement('br'));
-        }
-        var currentIndex = Math.min(1, labels.length - 1);
-        document.getElementsByClassName('legend-item')[currentIndex].click();
-      }
-      // Attach a click event to a delete button.
-      function attachDeleteEvent(annotator, button, index) {
-        button.addEventListener('click', function() {
-          annotator.removeLabel(index);
-          initializeLegend(annotator);
-        });
-      }
-      // Add an item to the legend.
-      function initializeLegendAdd(annotator) {
-        var input = document.getElementById('add-label-input');
-        input.addEventListener('keyup', function(event) {
-          if (event.keyCode === 13) {
-            var newLabels = annotator.getLabels();
-            // Drop colors except the first.
-            for (var i = 1; i < newLabels.length; ++i)
-              newLabels[i] = newLabels[i].name;
-            newLabels.push(event.target.value);
-            annotator.setLabels(newLabels);
-            initializeLegend(annotator);
-            event.target.value = '';
-            var index = newLabels.length - 1;
-            document.getElementsByClassName('legend-item')[index].click();
-          }
-        });
-      }
-      // Create a slide radio input.
-      function createToggleButton(button, disableCallback, enableCallback) {
-        var enabled = true;
-        button.addEventListener('click', function() {
-          if (enabled) {
-            disableCallback();
-            button.classList.add('toggle-button-disabled');
-            enabled = !enabled;
-          }
-          else {
-            enableCallback();
-            button.classList.remove('toggle-button-disabled');
-            enabled = !enabled;
-          }
-        });
-      }
-      // Create a local file input.
-      function createFileInput(button, callback) {
-        var input = document.createElement('input');
-        input.type = 'file';
-        input.style.display = 'none';
-        document.getElementsByTagName('body')[0].appendChild(input);
-        input.addEventListener('change', function(event) {
-          callback(event.target.files[0]);
-        });
-        button.addEventListener('click', function() {
-          input.click();
-        });
-      }
-      // Download as a file.      
-      function downloadAsFile(url, filename) {
-        var anchor = document.createElement('a');
-        anchor.style.display = 'none';
-        document.body.appendChild(anchor);
-        anchor.setAttribute('href', url);
-        anchor.setAttribute('download', filename);
-        anchor.click();
-        document.body.removeChild(anchor);
-      };
-      // Attach button events.
-      function initializeButtons(annotator) {
-        var fillAlpha = 128;
-        var boundaryEnabled = true;
-        createToggleButton(document.getElementById('image-view-button'),
-                           function() { annotator.setImageAlpha(0); },
-                           function() { annotator.setImageAlpha(255); });
-        createToggleButton(document.getElementById('boundary-view-button'), function() {
-          annotator.setBoundaryAlpha(fillAlpha);
-          boundaryEnabled = !boundaryEnabled;
-        }, function() {
-          if (fillAlpha === 128)
-            annotator.setBoundaryAlpha(192);
-          boundaryEnabled = !boundaryEnabled;
-        });
-        createToggleButton(document.getElementById('fill-view-button'), function() {
-          fillAlpha = 0;
-          annotator.setFillAlpha(fillAlpha);
-          annotator.setBoundaryAlpha(fillAlpha);
-        }, function() {
-          fillAlpha = 128;
-          annotator.setFillAlpha(fillAlpha);
-          if (boundaryEnabled)
-            annotator.setBoundaryAlpha(192);
-          else
-            annotator.setBoundaryAlpha(fillAlpha);
-        });
-        // Set up json importer.
-        createFileInput(document.getElementById('import-button'), function(file) {
-          if (file.type === 'application/json') {
-            var reader = new FileReader();
-            reader.onload = function(event) {
-              var data = JSON.parse(event.target.result);
-              annotator.setLabels(data.labels);
-              annotator.setAnnotation(data.annotation);
-              initializeLegend(annotator);
-            };
-            reader.readAsText(file);
-          }
-        });
-        document.getElementById('export-button').addEventListener('click', function() {
-          var data = {
-            labels: annotator.getLabels(),
-            annotation: annotator.getAnnotation()
-          };
-          var dataURL = 'data:application/json;charset=utf-8,' +
-                        encodeURIComponent(JSON.stringify(data));
-          downloadAsFile(dataURL, 'export.json');
-        });
-      }
-    }
-  </script>
-</body>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <h3>
+<a name="welcome-to-github-pages" class="anchor" href="#welcome-to-github-pages"><span class="octicon octicon-link"></span></a>Welcome to GitHub Pages.</h3>
+
+<p>This automatic page generator is the easiest way to create beautiful pages for all of your projects. Author your page content here using GitHub Flavored Markdown, select a template crafted by a designer, and publish. After your page is generated, you can check out the new branch:</p>
+
+<pre><code>$ cd your_repo_root/repo_name
+$ git fetch origin
+$ git checkout gh-pages
+</code></pre>
+
+<p>If you're using the GitHub for Mac, simply sync your repository and you'll see the new branch.</p>
+
+<h3>
+<a name="designer-templates" class="anchor" href="#designer-templates"><span class="octicon octicon-link"></span></a>Designer Templates</h3>
+
+<p>We've crafted some handsome templates for you to use. Go ahead and continue to layouts to browse through them. You can easily go back to edit your page before publishing. After publishing your page, you can revisit the page generator and switch to another theme. Your Page content will be preserved if it remained markdown format.</p>
+
+<h3>
+<a name="rather-drive-stick" class="anchor" href="#rather-drive-stick"><span class="octicon octicon-link"></span></a>Rather Drive Stick?</h3>
+
+<p>If you prefer to not use the automatic generator, push a branch named <code>gh-pages</code> to your repository to create a page manually. In addition to supporting regular HTML content, GitHub Pages support Jekyll, a simple, blog aware static site generator written by our own Tom Preston-Werner. Jekyll makes it easy to create site-wide headers and footers without having to copy them across every page. It also offers intelligent blog support and other advanced templating features.</p>
+
+<h3>
+<a name="authors-and-contributors" class="anchor" href="#authors-and-contributors"><span class="octicon octicon-link"></span></a>Authors and Contributors</h3>
+
+<p>You can <a href="https://github.com/blog/821" class="user-mention">@mention</a> a GitHub username to generate a link to their profile. The resulting <code>&lt;a&gt;</code> element will link to the contributor's GitHub Profile. For example: In 2007, Chris Wanstrath (<a href="https://github.com/defunkt" class="user-mention">@defunkt</a>), PJ Hyett (<a href="https://github.com/pjhyett" class="user-mention">@pjhyett</a>), and Tom Preston-Werner (<a href="https://github.com/mojombo" class="user-mention">@mojombo</a>) founded GitHub.</p>
+
+<h3>
+<a name="support-or-contact" class="anchor" href="#support-or-contact"><span class="octicon octicon-link"></span></a>Support or Contact</h3>
+
+<p>Having trouble with Pages? Check out the documentation at <a href="http://help.github.com/pages">http://help.github.com/pages</a> or contact <a href="mailto:support@github.com">support@github.com</a> and we’ll help you sort it out.</p>
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">Js-segment-annotator maintained by <a href="https://github.com/radcheb">radcheb</a></p>
+        <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+    
+
+  </body>
 </html>
